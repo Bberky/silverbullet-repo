@@ -2,7 +2,7 @@
 name: Library/Bberky/HelloWorld
 tags: meta/library
 ---
-This is a simple library to get hands-on experience with SilverBullet library development
+This is a simple library to get hands-on experience with SilverBullet library development.
 
 # Configuration
 There is only one configuration option and that is your name. When set, you will be greeted using your name, otherwise a _mysterious stranger_ will be used.
