@@ -6,5 +6,5 @@ tags: meta/repository
 name: HelloWorld
 author: Adam Berkes
 description: Example library
-uri: https://github.com/Bberky/silverbullet-repo/blob/main/libs/hello-world/Hello-World.md
+uri: https://github.com/Bberky/silverbullet-repo/blob/master/libs/hello-world/Hello-World.md
 ```
