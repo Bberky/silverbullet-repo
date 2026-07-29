@@ -22,18 +22,17 @@ Like `/index`, but also includes pages in nested folders.
 
 indexShortcuts = indexShortcuts or {}
 
-function indexShortcuts.folderName(pageName)
-  return pageName:match("^(.*)/[^/]+$") or ""
-end
-
 function indexShortcuts.folderIndexMarkdown(pageName, includeNested)
   pageName = pageName or editor.getCurrentPage()
 
-  local folderName = indexShortcuts.folderName(pageName)
-  local prefix = folderName == "" and "" or folderName .. "/"
+  local prefix = pageName .. "/"
+  local indexedPages = query[[
+    from page = index.pages()
+    select page
+  ]]
   local pages = {}
 
-  for _, page in ipairs(index.pages()) do
+  for _, page in ipairs(indexedPages) do
     local isInFolder = page.name:sub(1, #prefix) == prefix
     local relativeName = page.name:sub(#prefix + 1)
     local isDirectPage = relativeName:find("/", 1, true) == nil
@@ -51,12 +50,23 @@ function indexShortcuts.folderIndexMarkdown(pageName, includeNested)
   end)
 
   if #pages == 0 then
-    return "_No other pages in this folder._"
+    return "_No child pages._"
   end
 
   local items = {}
   for _, page in ipairs(pages) do
-    table.insert(items, templates.pageItem(page))
+    local indentation = ""
+
+    if includeNested then
+      local relativeName = page.name:sub(#prefix + 1)
+      local depth = 1
+      for _ in relativeName:gmatch("/") do
+        depth = depth + 1
+      end
+      indentation = string.rep("  ", depth - 1)
+    end
+
+    table.insert(items, indentation .. templates.pageItem(page))
   end
   return table.concat(items)
 end
@@ -69,7 +79,7 @@ end
 
 slashCommand.define {
   name = "index",
-  description = "Insert a live index of direct pages in the current folder",
+  description = "Insert a live index of the current page's direct children",
   run = function()
     editor.insertAtCursor(
       "${indexShortcuts.folderIndex()}\n|^|",
@@ -81,7 +91,7 @@ slashCommand.define {
 
 slashCommand.define {
   name = "index-nested",
-  description = "Insert a live recursive index of the current folder",
+  description = "Insert an indented live index of all child pages",
   run = function()
     editor.insertAtCursor(
       "${indexShortcuts.folderIndex(nil, true)}\n|^|",
