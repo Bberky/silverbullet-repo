@@ -22,4 +22,9 @@ name: Navigator
 author: Adam Berkeš
 description: Hierarchical parent and child page navigation
 uri: https://github.com/Bberky/silverbullet-repo/blob/master/libs/navigator/Navigator.md
+---
+name: Calendar
+author: Adam Berkeš
+description: Publish event tasks as a subscribable iCalendar feed
+uri: https://github.com/Bberky/silverbullet-repo/blob/master/libs/calendar/Calendar.md
 ```
