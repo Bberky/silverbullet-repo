@@ -85,13 +85,14 @@ The implementation uses SilverBullet's [file API](https://silverbullet.md/API/sp
 follows [RFC 5545](https://datatracker.ietf.org/doc/html/rfc5545).
 
 Invalid events are omitted. The manual publish command reports how many events
-were published and skipped; detailed validation messages are written to the
-SilverBullet log.
+were published, removed, and skipped; detailed validation messages are written
+to the SilverBullet log. Automatic publication shows a notification when it
+removes events from the feed.
 
 ## Configuration and schema
 
 ```space-lua
--- priority: 100
+-- priority: 40
 config.define("calendar", {
   type = "object",
   properties = {
@@ -106,6 +107,7 @@ config.define("calendar", {
   },
 })
 
+-- This schema powers editor completion and linting; publication uses the index.
 tag.define {
   name = "event",
   schema = {
@@ -132,7 +134,7 @@ calendar.dirtyAt = calendar.dirtyAt or os.time()
 
 function calendar.parseDate(value)
   if type(value) ~= "string" then
-    return nil, "date must be a string in YYYY-MM-DD format"
+    return nil, "date must use YYYY-MM-DD"
   end
 
   local yearText, monthText, dayText = value:match(
@@ -142,13 +144,10 @@ function calendar.parseDate(value)
     return nil, "date must use YYYY-MM-DD"
   end
 
-  local year = tonumber(yearText)
-  local month = tonumber(monthText)
-  local day = tonumber(dayText)
   local timestamp = os.time {
-    year = year,
-    month = month,
-    day = day,
+    year = tonumber(yearText),
+    month = tonumber(monthText),
+    day = tonumber(dayText),
   }
   if os.date("%Y-%m-%d", timestamp) ~= value then
     return nil, "date is not a real calendar date"
@@ -162,17 +161,11 @@ function calendar.parseTime(value)
     return nil
   end
   if type(value) ~= "string" then
-    return nil, "time must be a string in HH:MM format"
-  end
-
-  local hourText, minuteText = value:match("^(%d%d):(%d%d)$")
-  if not hourText then
     return nil, "time must use 24-hour HH:MM"
   end
 
-  local hour = tonumber(hourText)
-  local minute = tonumber(minuteText)
-  if hour > 23 or minute > 59 then
+  local hourText, minuteText = value:match("^(%d%d):(%d%d)$")
+  if not hourText or tonumber(hourText) > 23 or tonumber(minuteText) > 59 then
     return nil, "time must use 00:00 through 23:59"
   end
 
@@ -463,6 +456,33 @@ function calendar.renderFeed(events, calendarName)
   return table.concat(lines, "\r\n") .. "\r\n"
 end
 
+function calendar.countRemovedEvents(existing, events)
+  if not existing then
+    return 0
+  end
+
+  local currentRefs = {}
+  for _, event in ipairs(events) do
+    currentRefs[calendar.escapeText(event.ref)] = true
+  end
+
+  local previousRefs = {}
+  local unfolded = existing:gsub("\r?\n[ \t]", "")
+  for ref in ("\n" .. unfolded):gmatch(
+    "\nX%-SILVERBULLET%-REF:([^\r\n]+)"
+  ) do
+    previousRefs[ref] = true
+  end
+
+  local removed = 0
+  for ref in pairs(previousRefs) do
+    if not currentRefs[ref] then
+      removed = removed + 1
+    end
+  end
+  return removed
+end
+
 local function publishUnlocked()
   local outputFile, pathError = calendar.validateOutputFile(
     config.get("calendar.outputFile", "calendar.ics")
@@ -478,12 +498,13 @@ local function publishUnlocked()
 
   local events, validationErrors = calendar.collectEvents()
   local content = calendar.renderFeed(events, calendarName:trim())
-  local changed = true
+  local existing
 
   if space.fileExists(outputFile) then
-    local existing = encoding.utf8Decode(space.readFile(outputFile))
-    changed = existing ~= content
+    existing = encoding.utf8Decode(space.readFile(outputFile))
   end
+  local changed = existing ~= content
+  local removed = calendar.countRemovedEvents(existing, events)
 
   local syncError
   if changed then
@@ -500,6 +521,7 @@ local function publishUnlocked()
   return {
     outputFile = outputFile,
     published = #events,
+    removed = removed,
     skipped = #validationErrors,
     changed = changed,
     syncError = syncError,
@@ -511,6 +533,7 @@ function calendar.publish()
     return {
       busy = true,
       published = 0,
+      removed = 0,
       skipped = 0,
       changed = false,
     }
@@ -550,6 +573,9 @@ command.define {
     end
     if result.skipped > 0 then
       message = message .. "; skipped " .. result.skipped
+    end
+    if result.removed > 0 then
+      message = message .. "; removed " .. result.removed
     end
     if not result.changed then
       message = message .. " (feed unchanged)"
@@ -596,6 +622,11 @@ event.listen {
       print("Calendar: automatic feed publication failed: " .. tostring(result))
     elseif result.syncError then
       print("Calendar: automatic feed sync failed: " .. result.syncError)
+    elseif result.removed > 0 then
+      local noun = result.removed == 1 and " event" or " events"
+      editor.flashNotification(
+        "Calendar feed updated; removed " .. result.removed .. noun
+      )
     end
   end,
 }
