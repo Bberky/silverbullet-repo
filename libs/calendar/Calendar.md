@@ -10,7 +10,7 @@ Publishes tasks marked with `[tag: event]` to a single iCalendar (`.ics`)
 file. Subscribe to the generated file from a calendar client to see events from
 your SilverBullet space.
 
-Requires SilverBullet 2.7 or newer.
+Requires SilverBullet 2.10.0 or newer.
 
 ## Event syntax
 
@@ -130,18 +130,6 @@ calendar = calendar or {}
 calendar.publishing = false
 calendar.dirtyAt = calendar.dirtyAt or os.time()
 
-local function isLeapYear(year)
-  return year % 400 == 0 or (year % 4 == 0 and year % 100 ~= 0)
-end
-
-local function daysInMonth(year, month)
-  local days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-  if month == 2 and isLeapYear(year) then
-    return 29
-  end
-  return days[month]
-end
-
 function calendar.parseDate(value)
   if type(value) ~= "string" then
     return nil, "date must be a string in YYYY-MM-DD format"
@@ -157,10 +145,12 @@ function calendar.parseDate(value)
   local year = tonumber(yearText)
   local month = tonumber(monthText)
   local day = tonumber(dayText)
-  if year < 1 or month < 1 or month > 12 then
-    return nil, "date is not a real calendar date"
-  end
-  if day < 1 or day > daysInMonth(year, month) then
+  local timestamp = os.time {
+    year = year,
+    month = month,
+    day = day,
+  }
+  if os.date("%Y-%m-%d", timestamp) ~= value then
     return nil, "date is not a real calendar date"
   end
 
@@ -368,16 +358,8 @@ function calendar.formatTimestamp(value)
 end
 
 function calendar.isTaskObject(source)
-  local isTask = source.tag == "task"
-  if not isTask and type(source.itags) == "table" then
-    for _, tagName in ipairs(source.itags) do
-      if tagName == "task" then
-        isTask = true
-        break
-      end
-    end
-  end
-  return isTask
+  -- [tag: event] replaces the primary tag but preserves task metadata.
+  return type(source.state) == "string" and type(source.done) == "boolean"
 end
 
 function calendar.validateEvent(source)
@@ -425,8 +407,10 @@ end
 function calendar.collectEvents()
   local validEvents = {}
   local validationErrors = {}
+  -- index.objects returns a query collection in SilverBullet 2.10.
+  local sources = query [[from source = index.objects("event")]]
 
-  for _, source in ipairs(index.objects("event")) do
+  for _, source in ipairs(sources) do
     local event, validationError = calendar.validateEvent(source)
     if event then
       table.insert(validEvents, event)
