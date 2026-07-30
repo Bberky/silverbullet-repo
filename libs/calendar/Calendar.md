@@ -47,7 +47,7 @@ The defaults are equivalent to:
 
 ```lua
 config.set("calendar.name", "SilverBullet Events")
-config.set("calendar.outputFile", "Calendar.ics")
+config.set("calendar.outputFile", "calendar.ics")
 ```
 
 `calendar.outputFile` must be a relative, non-hidden path ending in `.ics`.
@@ -61,7 +61,7 @@ and once after the library loads. It avoids rewriting an unchanged feed.
 The default subscription URL is:
 
 ```text
-https://silverbullet.example/.fs/Calendar.ics
+https://silverbullet.example/.fs/calendar.ics
 ```
 
 When SilverBullet authentication is enabled, the calendar client must send:
@@ -101,7 +101,7 @@ config.define("calendar", {
     },
     outputFile = {
       type = "string",
-      default = "Calendar.ics",
+      default = "calendar.ics",
     },
   },
 })
@@ -367,9 +367,22 @@ function calendar.formatTimestamp(value)
   return "19700101T000000Z"
 end
 
+function calendar.isTaskObject(source)
+  local isTask = source.tag == "task"
+  if not isTask and type(source.itags) == "table" then
+    for _, tagName in ipairs(source.itags) do
+      if tagName == "task" then
+        isTask = true
+        break
+      end
+    end
+  end
+  return isTask
+end
+
 function calendar.validateEvent(source)
   local ref = tostring(source.ref or "unknown")
-  if type(source.state) ~= "string" or type(source.done) ~= "boolean" then
+  if not calendar.isTaskObject(source) then
     return nil, ref .. " is tagged as event but is not a task"
   end
   if type(source.name) ~= "string" or source.name:trim() == "" then
@@ -468,7 +481,7 @@ end
 
 local function publishUnlocked()
   local outputFile, pathError = calendar.validateOutputFile(
-    config.get("calendar.outputFile", "Calendar.ics")
+    config.get("calendar.outputFile", "calendar.ics")
   )
   if not outputFile then
     error(pathError)
