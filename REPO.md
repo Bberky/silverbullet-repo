@@ -27,4 +27,9 @@ name: Calendar
 author: Adam Berkeš
 description: Publish event tasks as a subscribable iCalendar feed
 uri: https://github.com/Bberky/silverbullet-repo/blob/master/libs/calendar/Calendar.md
+---
+name: Hello
+author: Adam Berkeš
+description: Exmaple hello plugin
+uri: https://github.com/Bberky/silverbullet-repo/blob/master/plugins/hello/PLUG.md
 ```
