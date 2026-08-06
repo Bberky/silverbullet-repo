@@ -38,7 +38,10 @@ export const publishCalendar = async (flashNotification = true) => {
 };
 
 export const insertEvent = async () => {
-  await editor.insertAtCursor("* [ ] ");
+  const TAG = "#event";
+  await editor.insertAtCursor(`* [ ]  ${TAG}`);
+  const cursorPos = await editor.getCursor();
+  await editor.moveCursor(cursorPos - TAG.length - 1);
 };
 
 export const autoSync = (() => {

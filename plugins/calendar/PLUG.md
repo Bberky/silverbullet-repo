@@ -33,23 +33,17 @@ Run the `Calendar: Publish` command to write the configured iCalendar file.
 config.define("calendar", {
   type = "object",
   properties = {
-    name = schema.string(),
-    outputFile = schema.string(),
-    autoSync = schema.number(),
+    name = {
+      type = "string",
+      default = "SilverBullet Calendar"
+    },
+    outputFile = {
+      type = "string",
+      default = "calendar.ics"
+    },
+    autoSync = {
+      type = "number"
+    },
   },
 })
-
-tag.define {
-  name = "event",
-  schema = {
-    type = "object",
-    properties = {
-      date = schema.string(),
-      time = schema.string(),
-      duration = schema.string(),
-      place = schema.string(),
-    },
-    required = { "date" },
-  },
-}
 ```
