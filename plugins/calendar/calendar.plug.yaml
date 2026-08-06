@@ -9,7 +9,7 @@ functions:
     slashCommand:
       name: event
       description: "Insert new event"
-  # autoSync:
-  #   path: src/calendar.ts:autoSync
-  #   events:
-  #     - cron:secondPassed
+  autoSync:
+    path: src/calendar.ts:autoSync
+    events:
+      - cron:secondPassed
