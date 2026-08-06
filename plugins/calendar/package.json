@@ -1,0 +1,13 @@
+{
+  "name": "silverbullet-plug-template",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "npx plug-compile calendar.plug.yaml"
+  },
+  "dependencies": {
+    "@silverbulletmd/silverbullet": ">=2.5.3",
+    "ical.js": "^2.2.1",
+    "zod": "^4.4.3"
+  }
+}

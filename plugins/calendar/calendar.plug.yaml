@@ -1,0 +1,15 @@
+name: calendar
+functions:
+  publishCalendar:
+    path: src/calendar.ts:publishCalendar
+    command:
+      name: "Calendar: Publish"
+  insertEvent:
+    path: src/calendar.ts:insertEvent
+    slashCommand:
+      name: event
+      description: "Insert new event"
+  autoSync:
+    path: src/calendar.ts:autoSync
+    events:
+      - cron:secondPassed
