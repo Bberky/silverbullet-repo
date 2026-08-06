@@ -26,7 +26,7 @@ uri: https://github.com/Bberky/silverbullet-repo/blob/master/libs/navigator/Navi
 name: Calendar
 author: Adam Berkeš
 description: Publish event tasks as a subscribable iCalendar feed
-uri: https://github.com/Bberky/silverbullet-repo/blob/master/plugins/calendar/Calendar.md
+uri: https://github.com/Bberky/silverbullet-repo/blob/master/plugins/calendar/PLUG.md
 ---
 name: Hello
 author: Adam Berkeš
